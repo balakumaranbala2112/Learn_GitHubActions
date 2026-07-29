@@ -1,0 +1,52 @@
+name: 12 - Env Scopes
+
+on:
+  workflow_dispatch
+
+# Workflow-level env -> visible to ALL jobs & steps unless overridden
+env:
+  APP_NAME: DemoApp
+  STAGE: global-level
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    # Job-level env -> overrides workflow-level for this job
+    env:
+      STAGE: job-level
+    steps:
+      - name: Uses workflow + job env
+        run: |
+          echo "APP_NAME = $APP_NAME"   # DemoApp   (from workflow scope)
+          echo "STAGE    = $STAGE"      # job-level (job overrides workflow)
+
+      - name: Step scope wins
+        env:
+          STAGE: step-level   # step scope -> overrides job AND workflow
+        run: |
+          echo "APP_NAME = $APP_NAME"   # DemoApp
+          echo "STAGE    = $STAGE"      # step-level
+
+      - name: Read env inside an expression
+        if: ${{ env.APP_NAME == 'DemoApp' }}
+        run: echo "Expression saw APP_NAME = ${{ env.APP_NAME }}"
+
+  job2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Uses workflow env only
+        run: |
+          echo "APP_NAME = $APP_NAME"   # DemoApp
+          echo "STAGE    = $STAGE"      # global-level
+
+  job3:
+    runs-on: ubuntu-latest
+    env:
+      STAGE: job3-level
+    steps:
+      - name: Step overrides job
+        env:
+          STAGE: Cloud Teacher
+        run: |
+          echo "APP_NAME = $APP_NAME"   # DemoApp
+          echo "STAGE    = $STAGE"      # Cloud Teacher
